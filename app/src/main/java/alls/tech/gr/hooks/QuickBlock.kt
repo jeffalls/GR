@@ -1,0 +1,54 @@
+package alls.tech.gr.hooks
+
+import android.view.Menu
+import android.view.MenuItem
+import alls.tech.gr.GR
+import alls.tech.gr.ui.Utils.getId
+import alls.tech.gr.utils.Hook
+import alls.tech.gr.utils.HookStage
+import alls.tech.gr.utils.hook
+import de.robv.android.xposed.XposedHelpers.callMethod
+import de.robv.android.xposed.XposedHelpers.getObjectField
+
+class QuickBlock : Hook(
+    "Quick block",
+    "Ability to block users quickly"
+) {
+    private val blockViewModel = "ff.b" // search for '("STATUS_BLOCK_DIALOG_SHOWN", 1)'
+    private val profileViewHolder = "com.grindrapp.android.ui.profileV2.e" // search for 'com.grindrapp.android.ui.profileV2.ProfileViewHolder$onBind$3'
+    private val profileModel = "com.grindrapp.android.persistence.model.Profile"
+
+    override fun init() {
+        findClass(profileViewHolder).hook("y", HookStage.AFTER) { param ->
+            val arg0 = param.arg(0) as Any
+            val profileId = param.args().getOrNull(1) ?: return@hook
+            val viewBinding = getObjectField(arg0, "b")
+            val profileToolbar = getObjectField(viewBinding, "q")
+            val toolbarMenu = callMethod(profileToolbar, "getMenu") as Menu
+            val menuActions = getId("menu_actions", "id", GR.context)
+            val actionsMenuItem = callMethod(toolbarMenu, "findItem", menuActions) as MenuItem
+            actionsMenuItem.setOnMenuItemClickListener { GR.httpClient.blockUser(profileId as String); true }
+        }
+
+        findClass(blockViewModel).hook("G", HookStage.BEFORE) { param ->
+            val profileId = param.thisObject().javaClass.declaredFields
+                .asSequence()
+                .filter { it.type == String::class.java }
+                .mapNotNull { field ->
+                    try {
+                        field.isAccessible = true
+                        field.get(param.thisObject()) as? String
+                    } catch (e: Exception) { null }
+                }
+                .firstOrNull { it.isNotEmpty() && it.all { char -> char.isDigit() } }
+            GR.httpClient.blockUser(profileId as String)
+            param.setResult(null)
+        }
+
+        setOf("isBlockable", "component60").forEach {
+            findClass(profileModel).hook(it, HookStage.BEFORE) { param ->
+                param.setResult(true)
+            }
+        }
+    }
+}
