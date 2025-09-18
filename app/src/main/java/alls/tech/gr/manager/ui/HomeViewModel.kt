@@ -34,8 +34,8 @@ class HomeViewModel : ViewModel() {
     companion object {
         private val TAG = HomeViewModel::class.simpleName
 
-        private const val CONTRIBUTORS_URL = "https://api.github.com/repos/R0rt1z2/GR/contributors"
-        private const val RELEASES_URL = "https://api.github.com/repos/R0rt1z2/GR/releases"
+        private const val CONTRIBUTORS_URL = "https://api.github.com/repos/R0rt1z2/GrindrPlus/contributors"
+        private const val RELEASES_URL = "https://api.github.com/repos/R0rt1z2/GrindrPlus/releases"
         // Reuse the HTTP client across requests
         private val client = OkHttpClient()
     }
@@ -102,11 +102,11 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 // Both requests are made in parallel
-                //val contributorsDeferred = async { fetchUrlContent(CONTRIBUTORS_URL) }
-                //val releasesDeferred = async { fetchUrlContent(RELEASES_URL) }
+                val contributorsDeferred = async { fetchUrlContent(CONTRIBUTORS_URL) }
+                val releasesDeferred = async { fetchUrlContent(RELEASES_URL) }
 
-                //parseContributors(contributorsDeferred.await())
-                //parseReleases(releasesDeferred.await())
+                parseContributors(contributorsDeferred.await())
+                parseReleases(releasesDeferred.await())
             } catch (e: Exception) {
                 Logger.e("$TAG: Error fetching data: ${e.message}")
                 errorMessage.value = "An error occurred: ${e.message}"

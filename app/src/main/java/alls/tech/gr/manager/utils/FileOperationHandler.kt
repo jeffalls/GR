@@ -120,7 +120,7 @@ object FileOperationHandler {
             val tempDir = File(context.cacheDir, "log_export")
             tempDir.mkdirs()
 
-            val zipFile = File(context.cacheDir, "∞_logs.zip")
+            val zipFile = File(context.cacheDir, "grindrplus_logs.zip")
             if (zipFile.exists()) zipFile.delete()
 
             val deviceInfoFile = File(tempDir, "device_info.json")
@@ -146,14 +146,14 @@ object FileOperationHandler {
             mainJson.put("android", androidSection)
 
             val appsSection = JSONObject().apply {
-                val GRPackageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                val grindrPlusPackageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 val grindrPackageInfo = context.packageManager.getPackageInfo(GRINDR_PACKAGE_NAME, 0)
 
-                val GRVersionCode = if (Build.VERSION.SDK_INT >= 28) {
-                    GRPackageInfo.longVersionCode
+                val grindrPlusVersionCode = if (Build.VERSION.SDK_INT >= 28) {
+                    grindrPlusPackageInfo.longVersionCode
                 } else {
                     @Suppress("DEPRECATION")
-                    GRPackageInfo.versionCode.toLong()
+                    grindrPlusPackageInfo.versionCode.toLong()
                 }
 
                 val grindrVersionCode = if (Build.VERSION.SDK_INT >= 28) {
@@ -163,7 +163,7 @@ object FileOperationHandler {
                     grindrPackageInfo.versionCode.toLong()
                 }
 
-                put("∞_version", "${GRPackageInfo.versionName} (${GRVersionCode})")
+                put("grindrplus_version", "${grindrPlusPackageInfo.versionName} (${grindrPlusVersionCode})")
                 put("grindr_version", "${grindrPackageInfo.versionName} (${grindrVersionCode})")
                 put("clones", AppCloneUtils.getExistingClones(context).size)
             }
@@ -184,16 +184,16 @@ object FileOperationHandler {
             deviceInfoFile.writeText(mainJson.toString(4))
             val logFiles = mutableListOf<File>()
 
-            val mainLogFile = File(context.getExternalFilesDir(null), "∞.log")
+            val mainLogFile = File(context.getExternalFilesDir(null), "GR.log")
             if (mainLogFile.exists()) {
-                val logCopy = File(tempDir, "∞.log")
+                val logCopy = File(tempDir, "GR.log")
                 mainLogFile.copyTo(logCopy, overwrite = true)
                 logFiles.add(logCopy)
             }
 
             val backupLogFile = File("${mainLogFile.absolutePath}.bak")
             if (backupLogFile.exists()) {
-                val backupCopy = File(tempDir, "∞.log.bak")
+                val backupCopy = File(tempDir, "GR.log.bak")
                 backupLogFile.copyTo(backupCopy, overwrite = true)
                 logFiles.add(backupCopy)
             }

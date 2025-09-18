@@ -42,6 +42,10 @@ import java.io.IOException
 import java.lang.ref.WeakReference
 import kotlin.system.measureTimeMillis
 import alls.tech.gr.core.EventManager
+import org.json.JSONObject
+import alls.tech.gr.utils.hookConstructor
+import alls.tech.gr.utils.HookStage
+import de.robv.android.xposed.XposedHelpers.callMethod
 
 @SuppressLint("StaticFieldLeak")
 object GR {
@@ -119,11 +123,17 @@ object GR {
     val serverNotifications = EventManager.serverNotifications
 
     fun init(modulePath: String, application: Application) {
+
+        if (isInitialized) {
+            Logger.d("GrindrPlus already initialized, skipping", LogSource.MODULE)
+            return
+        }
+
         this.context = application
         this.bridgeClient = BridgeClient(context)
 
         Logger.initialize(context, bridgeClient, true)
-        Logger.i("Initializing GR...", LogSource.MODULE)
+        Logger.i("Initializing GrindrPlus...", LogSource.MODULE)
 
         val connected = runBlocking {
             try {
@@ -141,8 +151,8 @@ object GR {
             shouldShowBridgeConnectionError = true
         }
 
-        Config.initialize(context,application.packageName)
-        val newModule = File(context.filesDir, "GR.dex")
+        Config.initialize(context, application.packageName)
+        val newModule = File(context.filesDir, "grindrplus.dex")
         File(modulePath).copyTo(newModule, true)
         newModule.setReadOnly()
 
@@ -179,19 +189,83 @@ object GR {
             Config.put("forced_coordinates", "")
         }
 
+        registerActivityLifecycleCallbacks(application)
+
+        if (shouldShowVersionMismatchDialog) {
+            Logger.i("Version mismatch detected, stopping initialization", LogSource.MODULE)
+            return
+        }
+
+        try {
+            setupInstanceManager()
+            setupServerNotificationHook()
+        } catch (t: Throwable) {
+            Logger.e("Failed to hook critical classes: ${t.message}", LogSource.MODULE)
+            Logger.writeRaw(t.stackTraceToString())
+            showToast(Toast.LENGTH_LONG, "Failed to hook critical classes: ${t.message}")
+            return
+        }
+
+        fetchRemoteData(splineDataEndpoint) { points ->
+            spline = PCHIP(points)
+            Logger.i("Updated spline with remote data", LogSource.MODULE)
+        }
+
+        try {
+            val initTime = measureTimeMillis { initializeCore(context) }
+            Logger.i("Initialization completed in $initTime ms", LogSource.MODULE)
+            isInitialized = true
+        } catch (t: Throwable) {
+            Logger.e("Failed to initialize: ${t.message}", LogSource.MODULE)
+            Logger.writeRaw(t.stackTraceToString())
+            showToast(Toast.LENGTH_LONG, "Failed to initialize: ${t.message}")
+            return
+        }
+    }
+
+
+    private fun setupServerNotificationHook() {
+        try {
+            classLoader.loadClass(serverNotification).hookConstructor(HookStage.AFTER) { param ->
+                try {
+                    val serverNotification = param.thisObject()
+                    val typeValue = callMethod(serverNotification, "getTypeValue") as String
+                    val notificationId = callMethod(serverNotification, "getNotificationId") as String?
+                    val payload = callMethod(serverNotification, "getPayload") as JSONObject?
+                    val status = callMethod(serverNotification, "getStatus") as Int?
+                    val refValue = callMethod(serverNotification, "getRefValue") as String?
+
+                    EventManager.emitServerNotification(typeValue, notificationId, payload, status, refValue)
+                    Logger.d("ServerNotification hooked and event emitted: $typeValue", LogSource.MODULE)
+                } catch (e: Exception) {
+                    Logger.e("Failed to emit server notification event: ${e.message}", LogSource.MODULE)
+                }
+            }
+        } catch (e: Exception) {
+            Logger.e("Failed to setup server notification hook: ${e.message}", LogSource.MODULE)
+        }
+    }
+
+    private fun registerActivityLifecycleCallbacks(application: Application) {
         application.registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-                if (shouldShowBridgeConnectionError) {
-                    showBridgeConnectionError(activity)
-                    shouldShowBridgeConnectionError = false
+                when {
+                    activity.javaClass.name == ageVerificationActivity -> {
+                        showAgeVerificationComplianceDialog(activity)
+                    }
+                    shouldShowBridgeConnectionError -> {
+                        showBridgeConnectionError(activity)
+                        shouldShowBridgeConnectionError = false
+                    }
+                    shouldShowVersionMismatchDialog -> {
+                        showVersionMismatchDialog(activity)
+                        shouldShowVersionMismatchDialog = false
+                    }
                 }
 
-                if (shouldShowVersionMismatchDialog) {
-                    showVersionMismatchDialog(activity)
-                    shouldShowVersionMismatchDialog = false
+                if (isImportingSomething) {
+                    handleImports(activity)
                 }
-
-                handleImports(activity)
             }
 
             override fun onActivityStarted(activity: Activity) {}
@@ -214,55 +288,45 @@ object GR {
 
             override fun onActivityDestroyed(activity: Activity) {}
         })
-
-        if (shouldShowVersionMismatchDialog) {
-            Logger.i("Version mismatch detected, stopping initialization", LogSource.MODULE)
-            return
-        }
-
-        try {
-            instanceManager.hookClassConstructors(
-                userAgent,
-                userSession,
-                deviceInfo,
-                grindrLocationProvider,
-                serverDrivenCascadeRepo
-            )
-
-            instanceManager.setCallback(userSession) { uSession ->
-                myProfileId = getObjectField(uSession, "z") as String
-                instanceManager.setCallback(userAgent) { uAgent ->
-                    instanceManager.setCallback(deviceInfo) { dInfo ->
-                        httpClient = Client(Interceptor(uSession, uAgent, dInfo))
-                        taskManager.registerTasks() // Tasks require httpClient
-                    }
-                }
-            }
-        } catch (t: Throwable) {
-            Logger.e("Failed to hook critical classes: ${t.message}", LogSource.MODULE)
-            Logger.writeRaw(t.stackTraceToString())
-            showToast(Toast.LENGTH_LONG, "Failed to hook critical classes: ${t.message}")
-            return
-        }
-
-        fetchRemoteData(splineDataEndpoint) { points ->
-            spline = PCHIP(points)
-            Logger.i("Updated spline with remote data", LogSource.MODULE)
-        }
-
-        try {
-            val initTime = measureTimeMillis { init(context) }
-            Logger.i("Initialization completed in $initTime ms", LogSource.MODULE)
-        } catch (t: Throwable) {
-            Logger.e("Failed to initialize: ${t.message}", LogSource.MODULE)
-            Logger.writeRaw(t.stackTraceToString())
-            showToast(Toast.LENGTH_LONG, "Failed to initialize: ${t.message}")
-            return
-        }
     }
 
-    private fun init(context: Context) {
-        Logger.i("Initializing GR...", LogSource.MODULE)
+    private fun setupInstanceManager() {
+        if (isInstanceManagerInitialized) {
+            Logger.d("InstanceManager already initialized, skipping", LogSource.MODULE)
+            return
+        }
+
+        instanceManager.hookClassConstructors(
+            userAgent,
+            userSession,
+            deviceInfo,
+            grindrLocationProvider,
+            serverDrivenCascadeRepo
+        )
+
+        instanceManager.setCallback(userSession) { uSession ->
+            instanceManager.setCallback(userAgent) { uAgent ->
+                instanceManager.setCallback(deviceInfo) { dInfo ->
+                    httpClient = Client(Interceptor(uSession, uAgent, dInfo))
+                    executeAsync {
+                        kotlinx.coroutines.delay(1500)
+                        fetchOwnUserId()
+                    }
+                    taskManager.registerTasks()
+                }
+            }
+        }
+
+        isInstanceManagerInitialized = true
+    }
+
+    private fun initializeCore(context: Context) {
+        if (isMainInitialized) {
+            Logger.d("Core already initialized, skipping", LogSource.MODULE)
+            return
+        }
+
+        Logger.i("Initializing GrindrPlus core...", LogSource.MODULE)
 
         if ((Config.get("reset_database", false) as Boolean)) {
             Logger.i("Resetting database...", LogSource.MODULE)
@@ -271,6 +335,7 @@ object GR {
         }
 
         hookManager.init(context)
+        isMainInitialized = true
     }
 
 
@@ -318,19 +383,35 @@ object GR {
             Handler(Looper.getMainLooper()).postDelayed({
                 val intent = context.packageManager
                     .getLaunchIntentForPackage(context.packageName)?.apply {
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                }
+                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    }
                 context.startActivity(intent)
                 android.os.Process.killProcess(android.os.Process.myPid())
             }, timeout)
         } else {
             val intent = context.packageManager
                 .getLaunchIntentForPackage(context.packageName)?.apply {
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            }
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
             context.startActivity(intent)
             android.os.Process.killProcess(android.os.Process.myPid())
         }
+    }
+
+    private fun checkVersionCodes(versionCodes: IntArray, versionNames: Array<String>) {
+        val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+        val versionCode: Long = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            pkgInfo.longVersionCode
+        } else {
+            @Suppress("DEPRECATION")
+            pkgInfo.versionCode.toLong()
+        }
+
+        val isVersionNameSupported = pkgInfo.versionName in versionNames
+        val isVersionCodeSupported = versionCodes.any { it.toLong() == versionCode }
+
+
+        hasCheckedVersions = true
     }
 
     private fun showVersionMismatchDialog(activity: Activity) {
@@ -346,7 +427,7 @@ object GR {
             val installedInfo = "${pkgInfo.versionName} (code: $versionCode)"
 
             val dialog = android.app.AlertDialog.Builder(activity)
-                .setTitle("GR: Version Mismatch")
+                .setTitle("GrindrPlus: Version Mismatch")
                 .setMessage("Incompatible Grindr version detected.\n\n" +
                         "• Installed: $installedInfo\n" +
                         "GR has been disabled. Please install a compatible Grindr version.")
@@ -394,6 +475,45 @@ object GR {
         }
     }
 
+    private fun showAgeVerificationComplianceDialog(activity: Activity) {
+        try {
+            val dialog = android.app.AlertDialog.Builder(activity)
+                .setTitle("Age Verification Required")
+                .setMessage("You are accessing Grindr from the UK where age verification is legally mandated.\n\n" +
+                        "LEGAL COMPLIANCE NOTICE:\n" +
+                        "GrindrPlus does NOT bypass, disable, or interfere with age verification systems. Any attempt to circumvent age verification requirements is illegal under UK law and is strictly prohibited.\n\n" +
+                        "MANDATORY REQUIREMENTS:\n" +
+                        "1. Complete age verification using the official Grindr application\n" +
+                        "2. Comply with all UK legal verification processes\n" +
+                        "3. Install GrindrPlus only after successful verification through official channels\n\n" +
+                        "WARNING:\n" +
+                        "Continued use of this module without proper age verification may result in legal consequences. The developers assume no responsibility for violations of age verification laws.\n\n" +
+                        "This module operates in full compliance with legal requirements and does not provide any means to bypass verification systems.")
+                .setPositiveButton("I Understand") { dialog, _ ->
+                    activity.finish()
+                    dialog.dismiss()
+                    showToast(Toast.LENGTH_LONG,
+                        "Please complete age verification in the official Grindr app first, then reinstall GrindrPlus")
+                }
+                .setNegativeButton("Exit App") { dialog, _ ->
+                    dialog.dismiss()
+                    android.os.Process.killProcess(android.os.Process.myPid())
+                }
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setCancelable(false)
+                .create()
+
+            dialog.show()
+            Logger.i("Age verification compliance dialog shown", LogSource.MODULE)
+
+        } catch (e: Exception) {
+            Logger.e("Failed to show age verification dialog: ${e.message}", LogSource.MODULE)
+            showToast(Toast.LENGTH_LONG,
+                "Age verification required. Please use official Grindr app to verify, then reinstall GrindrPlus.")
+            activity.finish()
+        }
+    }
+
     private fun fetchRemoteData(url: String, callback: (List<Pair<Long, Int>>) -> Unit) {
         val client = OkHttpClient()
         val request = Request.Builder().url(url).build()
@@ -425,5 +545,46 @@ object GR {
                 }
             }
         })
+    }
+
+    private fun fetchOwnUserId() {
+        executeAsync {
+            try {
+                Logger.d("Fetching own user ID...", LogSource.MODULE)
+                val response = httpClient.sendRequest(
+                    url = "https://grindr.mobi/v5/me/profile",
+                    method = "GET"
+                )
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    if (!responseBody.isNullOrEmpty()) {
+                        val jsonResponse = JSONObject(responseBody)
+                        val profilesArray = jsonResponse.optJSONArray("profiles")
+
+                        if (profilesArray != null && profilesArray.length() > 0) {
+                            val profile = profilesArray.getJSONObject(0)
+                            val profileId = profile.optString("profileId")
+
+                            if (profileId.isNotEmpty()) {
+                                myProfileId = profileId
+                                Logger.i("Own user ID fetched and saved: $myProfileId", LogSource.MODULE)
+                            } else {
+                                Logger.w("Profile ID field is empty in response", LogSource.MODULE)
+                            }
+                        } else {
+                            Logger.w("No profiles array found in response", LogSource.MODULE)
+                        }
+                    } else {
+                        Logger.w("Empty response body from profile endpoint", LogSource.MODULE)
+                    }
+                } else {
+                    Logger.e("Failed to fetch own profile: HTTP ${response.code}", LogSource.MODULE)
+                }
+            } catch (e: Exception) {
+                Logger.e("Error fetching own user ID: ${e.message}", LogSource.MODULE)
+                Logger.writeRaw(e.stackTraceToString())
+            }
+        }
     }
 }

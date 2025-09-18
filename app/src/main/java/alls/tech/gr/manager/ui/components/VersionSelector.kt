@@ -42,7 +42,7 @@ fun VersionSelector(
     onVersionSelected: (Data) -> Unit,
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
-    label: String = "Select a GR version",
+    label: String = "Select a GrindrPlus version",
     customOption: String? = null
 ) {
     var expanded by remember { mutableStateOf(false) }

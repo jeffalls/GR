@@ -10,12 +10,6 @@ import java.lang.reflect.Proxy
 object RetrofitUtils {
     const val FAIL_CLASS_NAME = "ya.a\$a"
     const val SUCCESS_CLASS_NAME = "ya.a\$b"
-
-    //25.06 const val FAIL_CLASS_NAME = "d9.a\$a"
-    //25.06 const val SUCCESS_CLASS_NAME = "d9.a\$b"
-
-    //25.10 const val FAIL_CLASS_NAME = "na.a\$a"
-    //25.10 const val SUCCESS_CLASS_NAME = "na.a\$b"
     const val SUCCESS_VALUE_NAME = "a"
     const val RETROFIT_NAME = "retrofit2.Retrofit"
 

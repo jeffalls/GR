@@ -26,7 +26,7 @@ class ReverseRadarTabs : Hook(
                     Utils.getId(
                         "radar_view_pager",
                         "id",
-                        GR.context
+                        GrindrPlus.context
                     )
                 )
                 val setCurrentItem = viewPagerClass.getMethod("setCurrentItem", Int::class.java, Boolean::class.java)

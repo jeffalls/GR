@@ -35,14 +35,14 @@ class Installation(
     private val unzipFolder = File(folder, "splitApks/").also { it.mkdirs() }
     private val outputDir = File(folder, "LSPatchOutput/").also { it.mkdirs() }
     private val modFile = File(folder, "mod-$version.zip")
-    private val bundleFile = File(folder, "∞-$version.zip")
+    private val bundleFile = File(folder, "grindr-$version.zip")
 
     private val installStep = InstallApkStep(outputDir)
     private val patchApkStep = PatchApkStep(unzipFolder, outputDir, modFile, keyStoreUtils.keyStore, mapsApiKey)
     private val commonSteps = listOf(
         // Order matters
         CheckStorageSpaceStep(folder),
-        DownloadStep(bundleFile, grindrUrl, "∞ bundle"),
+        DownloadStep(bundleFile, grindrUrl, "Grindr bundle"),
         DownloadStep(modFile, modUrl, "mod"),
         ExtractBundleStep(bundleFile, unzipFolder),
     )
@@ -98,7 +98,7 @@ class Installation(
         print: Print,
     ) = try {
         withContext(Dispatchers.IO) {
-            plausible?.pageView("app://GR/$operationName")
+            plausible?.pageView("app://grindrplus/$operationName")
 
             val time = measureTimeMillis {
                 for (step in steps) {
@@ -114,7 +114,7 @@ class Installation(
 
             plausible?.event(
                 "${operationName}_success",
-                "app://GR/${operationName}_success",
+                "app://grindrplus/${operationName}_success",
                 props = mapOf("time" to time)
             )
 
@@ -125,14 +125,14 @@ class Installation(
         showToast("$operationName was cancelled")
         plausible?.event(
             "${operationName}_cancelled",
-            "app://GR/${operationName}_cancelled"
+            "app://grindrplus/${operationName}_cancelled"
         )
         throw e
     } catch (e: Exception) {
         val errorMsg = "$operationName failed: ${e.localizedMessage}"
         plausible?.event(
             "${operationName}_failed",
-            "app://GR/${operationName}_failure",
+            "app://grindrplus/${operationName}_failure",
             props = mapOf("error" to e.message)
         )
         print(errorMsg)

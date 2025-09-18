@@ -23,6 +23,9 @@ import kotlinx.coroutines.launch
 class SettingsViewModel(
     private val context: Context,
 ) : ViewModel() {
+    private val hookHideList = setOf(
+        "Status Dialog",
+    )
 
     private val _settingGroups = MutableStateFlow<List<SettingGroup>>(emptyList())
     val settingGroups: StateFlow<List<SettingGroup>> = _settingGroups
@@ -72,20 +75,22 @@ class SettingsViewModel(
 
             try {
                 val hooks = Config.getHooksSettings()
-                val hookSettings = hooks.map { (hookName, pair) ->
-                    SwitchSetting(
-                        id = hookName,
-                        title = hookName,
-                        description = pair.first,
-                        isChecked = pair.second,
-                        onCheckedChange = {
-                            viewModelScope.launch {
-                                Config.setHookEnabled(hookName, it)
-                                loadSettings()
+                val hookSettings = hooks
+                    .filterNot { (hookName, _) -> hookName in hookHideList }
+                    .map { (hookName, pair) ->
+                        SwitchSetting(
+                            id = hookName,
+                            title = hookName,
+                            description = pair.first,
+                            isChecked = pair.second,
+                            onCheckedChange = {
+                                viewModelScope.launch {
+                                    Config.setHookEnabled(hookName, it)
+                                    loadSettings()
+                                }
                             }
-                        }
-                    )
-                }
+                        )
+                    }
 
                 val tasks = Config.getTasksSettings()
                 val taskSettings = tasks.map { (taskId, pair) ->
@@ -163,6 +168,18 @@ class SettingsViewModel(
                             if (value == null || value <= 0) "Duration must be a positive number" else null
                         }
                     ),
+                    SwitchSetting(
+                        id = "show_bmi_in_profile",
+                        title = "Show BMI in Profile",
+                        description = "Display BMI in the profile section",
+                        isChecked = Config.get("show_bmi_in_profile", true) as Boolean,
+                        onCheckedChange = {
+                            viewModelScope.launch {
+                                Config.put("show_bmi_in_profile", it)
+                                loadSettings()
+                            }
+                        }
+                    ),
                     TextSetting(
                         id = "favorites_grid_columns",
                         title = "Favorites grid columns",
@@ -210,6 +227,30 @@ class SettingsViewModel(
                             }
                         )
 
+                    ),
+                    SwitchSetting(
+                        id = "enable_cookie_tap",
+                        title = "Enable Cookie Tap",
+                        description = "Enable the ability to send cookie taps to other users (they'll see them)",
+                        isChecked = Config.get("enable_cookie_tap", false) as Boolean,
+                        onCheckedChange = {
+                            viewModelScope.launch {
+                                Config.put("enable_cookie_tap", it)
+                                loadSettings()
+                            }
+                        }
+                    ),
+                    SwitchSetting(
+                        id = "enable_vip_flag",
+                        title = "Enable Star Section",
+                        description = "Enables what looks like a recommendation section next to Browse",
+                        isChecked = Config.get("enable_vip_flag", false) as Boolean,
+                        onCheckedChange = {
+                            viewModelScope.launch {
+                                Config.put("enable_vip_flag", it)
+                                loadSettings()
+                            }
+                        }
                     ),
                     SwitchSetting(
                         id = "enable_albums_spank_bank",
@@ -301,7 +342,7 @@ class SettingsViewModel(
                     TextSettingWithButtons(
                         id = "maps_api_key",
                         title = "Maps API Key",
-                        description = "Use a custom Maps API Key when using GR with LSPatch",
+                        description = "Use a custom Maps API Key when using Grindr Plus with LSPatch",
                         value = Config.get("maps_api_key", "") as String,
                         onValueChange = {
                             viewModelScope.launch {
@@ -329,7 +370,7 @@ class SettingsViewModel(
                     TextSetting(
                         id = "custom_manifest",
                         title = "Custom Manifest URL",
-                        description = "Use a custom manifest URL when using GR with LSPatch",
+                        description = "Use a custom manifest URL when using Grindr Plus with LSPatch",
                         value = Config.get("custom_manifest", DATA_URL) as String,
                         onValueChange = {
                             viewModelScope.launch {

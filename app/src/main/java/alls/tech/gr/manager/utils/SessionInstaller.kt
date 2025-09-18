@@ -23,7 +23,7 @@ import kotlin.coroutines.suspendCoroutine
 class SessionInstaller {
     companion object {
         private const val TAG = "SessionInstaller"
-        private const val ACTION_INSTALL_COMPLETE = "package alls.tech.gr.INSTALL_COMPLETE"
+        private const val ACTION_INSTALL_COMPLETE = "alls.tech.gr.INSTALL_COMPLETE"
         private const val DEFAULT_BUFFER_SIZE = 8192
     }
 

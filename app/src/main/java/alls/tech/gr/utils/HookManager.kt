@@ -38,6 +38,7 @@ import android.content.Context
 import alls.tech.gr.core.Config.writeDeviceIdToFile
 import android.widget.Toast
 import alls.tech.gr.hooks.ProfileSpoofer
+import alls.tech.gr.hooks.WebSocketAlive
 import android.provider.Settings
 
 class HookManager {
@@ -78,6 +79,7 @@ class HookManager {
 
         runBlocking(Dispatchers.IO) {
             val hookList = listOf(
+                WebSocketAlive(),
                 TimberLogging(),
                 BanManagement(),
                 FeatureGranting(),

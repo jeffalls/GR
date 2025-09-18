@@ -46,7 +46,7 @@ class KeyStoreUtils(context: Context) {
         val certificate = keyStore.getCertificate(alias) as X509Certificate
 
         ApkSigner.SignerConfig.Builder(
-            "GR",
+            "GrindrPlus",
             keyStore.getKey(alias, "password".toCharArray()) as PrivateKey,
             listOf(certificate)
         ).build()
@@ -90,7 +90,7 @@ class KeyStoreUtils(context: Context) {
             do serialNumber = SecureRandom().nextInt().toBigInteger()
             while (serialNumber < BigInteger.ZERO)
 
-            val x500Name = X500Name("CN=GR")
+            val x500Name = X500Name("CN=GrindrPlus")
             val pair = KeyPairGenerator.getInstance("RSA").run {
                 initialize(2048)
                 generateKeyPair()

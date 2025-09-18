@@ -16,8 +16,8 @@ class AppIconManager(private val context: Context) {
         return try {
             val packageManager = context.packageManager
             val componentName = when (iconType) {
-                DEFAULT_ICON -> ComponentName(context, "package alls.tech.gr.manager.MainActivity")
-                DISCREET_ICON -> ComponentName(context, "package alls.tech.gr.manager.MainActivityAlias")
+                DEFAULT_ICON -> ComponentName(context, "alls.tech.gr.manager.MainActivity")
+                DISCREET_ICON -> ComponentName(context, "alls.tech.gr.manager.MainActivityAlias")
                 else -> return false
             }
 
@@ -39,8 +39,8 @@ class AppIconManager(private val context: Context) {
     private fun disableAllAliases() {
         val packageManager = context.packageManager
         val aliasesToDisable = listOf(
-            ComponentName(context, "package alls.tech.gr.manager.MainActivity"),
-            ComponentName(context, "package alls.tech.gr.manager.MainActivityAlias")
+            ComponentName(context, "alls.tech.gr.manager.MainActivity"),
+            ComponentName(context, "alls.tech.gr.manager.MainActivityAlias")
         )
 
         for (alias in aliasesToDisable) {

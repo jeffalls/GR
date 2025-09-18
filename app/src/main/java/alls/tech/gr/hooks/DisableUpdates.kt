@@ -21,7 +21,7 @@ class DisableUpdates : Hook(
     private val versionInfoEndpoint = "https://alls.tech/v%E2%88%9E" //"https://raw.githubusercontent.com/R0rt1z2/GrindrPlus/master/version.json"
     private val appUpdateInfo = "com.google.android.play.core.appupdate.AppUpdateInfo"
     private val appUpdateZzm = "com.google.android.play.core.appupdate.zzm" // search for 'requestUpdateInfo(%s)'
-    private val appUpgradeManager = "K9.n" // search for 'Uri.parse("market://details?id=com.grindrapp.android");'
+    private val appUpgradeManager = "K9.z" // search for 'Uri.parse("market://details?id=com.grindrapp.android");'
     private val appConfiguration = "com.grindrapp.android.platform.config.AppConfiguration"
     private var versionCode: Int = 0
     private var versionName: String = ""
@@ -69,7 +69,7 @@ class DisableUpdates : Hook(
                     updateVersionInfo()
                 }
             } else {
-                Logger.e("Failed to fetch version info: ${response.message}")
+                loge("Failed to fetch version info: ${response.message}")
             }
         } catch (e: Exception) {
             loge("Error fetching version info: ${e.message}")
@@ -77,12 +77,26 @@ class DisableUpdates : Hook(
         }
     }
 
+    private fun compareVersions(v1: String, v2: String): Int {
+        val parts1 = v1.split(".").map { it.toInt() }
+        val parts2 = v2.split(".").map { it.toInt() }
+        val maxLength = maxOf(parts1.size, parts2.size)
+
+        for (i in 0 until maxLength) {
+            val part1 = if (i < parts1.size) parts1[i] else 0
+            val part2 = if (i < parts2.size) parts2[i] else 0
+            if (part1 != part2) return part1.compareTo(part2)
+        }
+        return 0
+    }
+
     private fun updateVersionInfo() {
-        if (versionName < GR.context.packageManager.getPackageInfo(
-                GR.context.packageName,
-                0
-            ).versionName.toString()
-        ) {
+        val currentVersion = GR.context.packageManager.getPackageInfo(
+            GR.context.packageName,
+            0
+        ).versionName.toString()
+
+        if (compareVersions(versionName, currentVersion) > 0) {
             findClass(appConfiguration).hookConstructor(HookStage.AFTER) { param ->
                 setObjectField(param.thisObject(), "b", versionName)
                 setObjectField(param.thisObject(), "c", versionCode)
@@ -99,6 +113,8 @@ class DisableUpdates : Hook(
                     }
                 }
             }
+        } else {
+            logd("Current version is up-to-date: $versionName ($versionCode)")
         }
     }
 }

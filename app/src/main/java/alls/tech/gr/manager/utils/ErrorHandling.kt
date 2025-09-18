@@ -19,7 +19,7 @@ import java.util.Locale
 // TODO: Sync with module once everything's connected
 object ErrorHandler {
     private const val TAG = "ErrorHandler"
-    private const val LOG_FILE_PREFIX = "∞_log_"
+    private const val LOG_FILE_PREFIX = "grindrplus_log_"
 
     fun logError(context: Context, tag: String, message: String, error: Throwable?) {
         Timber.tag(tag).e(error, message)

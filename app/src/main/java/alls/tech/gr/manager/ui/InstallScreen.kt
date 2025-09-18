@@ -113,7 +113,7 @@ fun InstallPage(context: Activity, innerPadding: PaddingValues) {
             StorageUtils.cleanupOldInstallationFiles(context, true, null)
         }
 
-        addLog("Welcome to GR Manager")
+        addLog("Welcome to Grindr Plus Manager")
         addLog("Loading available versions...", LogType.INFO)
 
         loadVersionData(
@@ -276,7 +276,7 @@ fun InstallPage(context: Activity, innerPadding: PaddingValues) {
 
             if (isRooted) {
                 MessageBanner(
-                    text = "We detected that your device is rooted.\nThe recommended way to use GR with root is LSPosed.",
+                    text = "We detected that your device is rooted.\nThe recommended way to use GrindrPlus with root is LSPosed.",
                     isVisible = rootedBannerVisible,
                     isPulsating = true,
                     modifier = Modifier.fillMaxWidth(),

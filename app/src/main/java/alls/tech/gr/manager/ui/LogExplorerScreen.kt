@@ -95,7 +95,7 @@ fun DebugLogsScreen(
     LaunchedEffect(Unit) {
         launch {
             withContext(Dispatchers.IO) {
-                val log = File(context.getExternalFilesDir(null), "∞.log")
+                val log = File(context.getExternalFilesDir(null), "GR.log")
 
                 fun parseLogs(logs: List<String>) =
                     logs.map {
@@ -147,7 +147,7 @@ fun DebugLogsScreen(
                         val zipFile = FileOperationHandler.createLogsZip(context)
                         if (zipFile != null) {
                             FileOperationHandler.exportZipFile(
-                                "∞_logs.zip",
+                                "grindrplus_logs.zip",
                                 zipFile
                             )
                         } else {
@@ -168,7 +168,7 @@ fun DebugLogsScreen(
                             snackbarHostState.showSnackbar("Generating URL... This may take a while.")
                         }
 
-                        val log = File(context.getExternalFilesDir(null), "∞.log")
+                        val log = File(context.getExternalFilesDir(null), "GR.log")
                         val logContent = log.readText()
 
                         uploadAndShare(logContent, context)
@@ -186,7 +186,7 @@ fun DebugLogsScreen(
         ReportIssueDialog(
             onDismiss = { showReportDialog = false },
             onOpenGitHub = {
-                val intent = Intent(Intent.ACTION_VIEW, "https://github.com/R0rt1z2/GR/issues".toUri())
+                val intent = Intent(Intent.ACTION_VIEW, "https://github.com/R0rt1z2/GrindrPlus/issues".toUri())
                 context.startActivity(intent)
                 showReportDialog = false
             }

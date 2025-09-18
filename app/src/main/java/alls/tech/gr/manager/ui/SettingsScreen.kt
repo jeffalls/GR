@@ -109,7 +109,7 @@ fun SettingsScreen(
             onDismiss = { showAboutDialog = false },
             onViewSourceCode = {
                 val intent =
-                    Intent(Intent.ACTION_VIEW, "https://github.com/R0rt1z2/GR".toUri())
+                    Intent(Intent.ACTION_VIEW, "https://github.com/R0rt1z2/GrindrPlus".toUri())
                 context.startActivity(intent)
             }
         )
@@ -178,7 +178,7 @@ fun SettingsScreen(
                                         val result = Config.readRemoteConfig()
 
                                         FileOperationHandler.exportFile(
-                                            "∞_settings.json",
+                                            "grindrplus_settings.json",
                                             result.toString(4)
                                         )
 
@@ -366,7 +366,7 @@ fun AboutDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "∞",
+                    text = "GrindrPlus",
                     style = MaterialTheme.typography.headlineMedium
                 )
 

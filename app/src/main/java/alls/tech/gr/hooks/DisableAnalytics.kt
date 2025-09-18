@@ -35,13 +35,13 @@ class DisableAnalytics : Hook(
         findClass("com.braze.Braze\$Companion")
             // See https://braze-inc.github.io/braze-android-sdk/kdoc/braze-android-sdk/com.braze/-braze/-companion/outbound-network-requests-offline.html
             .hook("setOutboundNetworkRequestsOffline", HookStage.BEFORE) {
-                param -> param.setArg(0, true)
+                    param -> param.setArg(0, true)
             }
 
         // Digital Turbine
         findClass("com.fyber.inneractive.sdk.network.i")
             .hook("a", HookStage.BEFORE) {
-                param -> param.setResult(null)
+                    param -> param.setResult(null)
             }
 
         // Google Analytics
@@ -59,19 +59,19 @@ class DisableAnalytics : Hook(
         // Ironsource
         findClass("com.ironsource.mediationsdk.server.ServerURL")
             .hook("getRequestURL", HookStage.BEFORE) {
-                param -> param.setResult(null)
+                    param -> param.setResult(null)
             }
 
         // Liftoff (Vungle)
         findClass("com.vungle.ads.internal.network.VungleApiClient")
             .hook("config", HookStage.BEFORE) {
-                param -> param.setResult(null)
+                    param -> param.setResult(null)
             }
 
         // Unity
         findClass("com.unity3d.services.ads.UnityAdsImplementation")
             .hook("getInstance", HookStage.BEFORE) {
-                param -> param.setResult(null)
+                    param -> param.setResult(null)
             }
     }
 }

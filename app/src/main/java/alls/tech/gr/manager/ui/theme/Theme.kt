@@ -100,7 +100,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun GRTheme(
+fun GrindrPlusTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit

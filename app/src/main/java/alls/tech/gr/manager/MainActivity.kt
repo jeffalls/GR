@@ -76,9 +76,10 @@ import alls.tech.gr.manager.ui.CalculatorScreen
 import alls.tech.gr.manager.ui.HomeScreen
 import alls.tech.gr.manager.ui.InstallPage
 import alls.tech.gr.manager.ui.SettingsScreen
-import alls.tech.gr.manager.ui.theme.GRTheme
+import alls.tech.gr.manager.ui.theme.GrindrPlusTheme
 import alls.tech.gr.manager.utils.FileOperationHandler
 import alls.tech.gr.utils.HookManager
+import alls.tech.gr.utils.TaskManager
 import com.onebusaway.plausible.android.AndroidResourcePlausibleConfig
 import com.onebusaway.plausible.android.NetworkFirstPlausibleClient
 import com.onebusaway.plausible.android.Plausible
@@ -88,6 +89,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import timber.log.Timber
 import timber.log.Timber.DebugTree
+
 
 internal val activityScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 internal const val TAG = "∞"
@@ -122,7 +124,7 @@ class MainActivity : ComponentActivity() {
         val showUninstallDialog = mutableStateOf(false)
     }
 
-    private var showPermissionDialog = false
+    private var showPermissionDialog by mutableStateOf(false)
     private lateinit var receiver: NotificationActionReceiver
 
     private val requestPermissionLauncher = registerForActivityResult(
@@ -147,7 +149,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
-                    showNotificationPermissionExplanation()
+                    showPermissionDialog = true
                 }
 
                 else -> {
@@ -167,25 +169,21 @@ class MainActivity : ComponentActivity() {
             }
             Toast.makeText(
                 this,
-                "Please allow unknown sources for GR",
+                "Please allow unknown sources for GrindrPlus",
                 Toast.LENGTH_LONG
             ).show()
             startActivity(intent)
         }
     }
 
-    private fun showNotificationPermissionExplanation() {
-        showPermissionDialog = true
-    }
-
     private fun registerNotificationReceiver() {
         try {
             receiver = NotificationActionReceiver()
             val intentFilter = IntentFilter().apply {
-                addAction("package alls.tech.gr.COPY_ACTION")
-                addAction("package alls.tech.gr.VIEW_PROFILE_ACTION")
-                addAction("package alls.tech.gr.CUSTOM_ACTION")
-                addAction("package alls.tech.gr.DEFAULT_ACTION")
+                addAction("alls.tech.gr.COPY_ACTION")
+                addAction("alls.tech.gr.VIEW_PROFILE_ACTION")
+                addAction("alls.tech.gr.CUSTOM_ACTION")
+                addAction("alls.tech.gr.DEFAULT_ACTION")
             }
             ContextCompat.registerReceiver(
                 applicationContext,
@@ -239,6 +237,7 @@ class MainActivity : ComponentActivity() {
                     Logger.initialize(this@MainActivity, GR.bridgeClient, false)
                     Config.initialize(this@MainActivity)
                     HookManager().registerHooks(this@MainActivity, false)
+                    TaskManager().registerTasks(false)
                     calculatorScreen.value = Config.get("discreet_icon", false) as Boolean
                     serviceBound = true
 
@@ -249,7 +248,7 @@ class MainActivity : ComponentActivity() {
 
                     if (Config.get("analytics", true) as Boolean) {
                         val config = AndroidResourcePlausibleConfig(this@MainActivity).also {
-                            it.domain = "∞.lol"
+                            it.domain = "GR.lol"
                             it.host = "https://plausible.gmmz.dev/api/"
                             it.enable = true
                         }
@@ -280,12 +279,12 @@ class MainActivity : ComponentActivity() {
                 return@setContent
             }
 
-            GRTheme(
+            GrindrPlusTheme(
                 dynamicColor = Config.get("material_you", false) as Boolean,
             ) {
                 if (calculatorScreen.value) {
                     CalculatorScreen(calculatorScreen)
-                    return@GRTheme
+                    return@GrindrPlusTheme
                 }
 
                 if (showPermissionDialog) {
@@ -309,7 +308,7 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 Text(
-                                    text = "∞ needs notification permission to alert you when someone blocks or unblocks you.",
+                                    text = "GR needs notification permission to alert you when someone blocks or unblocks you.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 )
@@ -356,7 +355,7 @@ class MainActivity : ComponentActivity() {
                                 verticalArrangement = Center
                             ) {
                                 Text(
-                                    text = "Welcome to GR!",
+                                    text = "Welcome to GrindrPlus!",
                                     style = MaterialTheme.typography.headlineSmall,
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 )
@@ -399,7 +398,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    return@GRTheme
+                    return@GrindrPlusTheme
                 }
 
                 if (showUninstallDialogState) {

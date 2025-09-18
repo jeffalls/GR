@@ -15,6 +15,8 @@ class EnableUnlimited : Hook(
     "Enable unlimited",
     "Enable Grindr Unlimited features"
 ) {
+    private val profileViewState = "com.grindrapp.android.ui.profileV2.model.ProfileViewState"
+    private val profileModel = "com.grindrapp.android.persistence.model.Profile"
     private val paywallUtils = "Td.d" // search for 'app_restart_required'
     private val persistentAdBannerContainer = "Y6.J3" // search for 'GrindrAdContainer grindrAdContainer = (GrindrAdContainer) ViewBindings.findChildViewById(view, R.id.persistent_banner_ad_container);'
     private val subscribeToInterstitialsList = listOf(
@@ -91,6 +93,12 @@ class EnableUnlimited : Hook(
             }
         }
 
+        setOf("isBlockable", "component60").forEach {
+            findClass(profileModel).hook(it, HookStage.BEFORE) { param ->
+                param.setResult(true)
+            }
+        }
+
         findClass(paywallUtils).hook("e", HookStage.BEFORE) { param ->
             val stackTrace = Thread.currentThread().stackTrace.dropWhile {
                 !it.toString().contains("LSPHooker") }.drop(1).joinToString("\n")
@@ -114,6 +122,10 @@ class EnableUnlimited : Hook(
                 .show()
 
             param.setResult(null)
+        }
+
+        findClass(profileViewState).hook("isChatPaywalled", HookStage.BEFORE) { param ->
+            param.setResult(false)
         }
     }
 

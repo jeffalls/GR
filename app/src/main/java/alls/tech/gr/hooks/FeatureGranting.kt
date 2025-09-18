@@ -15,7 +15,6 @@ class FeatureGranting : Hook(
     "Feature granting",
     "Grant all Grindr features"
 ) {
-    private val featureFlagManager = "x8.a" // search for 'experiments, @NotNull String featureFlagName,'
     private val isFeatureFlagEnabled = "yb.d" // search for 'implements IsFeatureFlagEnabled {'
     private val upsellsV8Model = "com.grindrapp.android.model.UpsellsV8"
     private val insertsModel = "com.grindrapp.android.model.Inserts"
@@ -86,6 +85,7 @@ class FeatureGranting : Hook(
         featureManager.add(Feature("PasswordComplexity", false))
         featureManager.add(Feature("TimedBans", false))
         featureManager.add(Feature("GenderFlag", true))
+        featureManager.add(Feature("RewardedAdViewedMeFeatureFlag", false))
         featureManager.add(Feature("ChatInterstitialFeatureFlag", false))
         featureManager.add(Feature("SideDrawerDeeplinkKillSwitch", true))
         featureManager.add(Feature("SponsoredRoamKillSwitch", true))
@@ -94,6 +94,7 @@ class FeatureGranting : Hook(
         featureManager.add(Feature("DoxyPEP", true))
         featureManager.add(Feature("CascadeRewriteFeatureFlag", false))
         featureManager.add(Feature("AdsLogs", false))
+        featureManager.add(Feature("PersistentAdBannerFeatureFlag", false))
         featureManager.add(Feature("ClientTelemetryTracking", false))
         featureManager.add(Feature("LTOAds", false))
         featureManager.add(Feature("SponsorProfileAds", false))
@@ -107,8 +108,7 @@ class FeatureGranting : Hook(
         featureManager.add(Feature("CookieTap", Config.get("enable_cookie_tap", false, true) as Boolean))
         featureManager.add(Feature("VipFlag", Config.get("enable_vip_flag", false, true) as Boolean))
         featureManager.add(Feature("PositionFilter", true))
-        featureManager.add(Feature("AgeVerification", true))
-        featureManager.add(Feature("BanterFeatureGate", true))
+        featureManager.add(Feature("BanterFeatureGate", false))
         featureManager.add(Feature("TakenOnGrindrWatermarkFlag", false))
         featureManager.add(Feature("gender-filter", true))
         featureManager.add(Feature("enable-chat-summaries", true))

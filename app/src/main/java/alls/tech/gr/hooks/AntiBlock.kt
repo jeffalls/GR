@@ -15,12 +15,16 @@ import alls.tech.gr.utils.hookConstructor
 import de.robv.android.xposed.XposedHelpers.getObjectField
 import org.json.JSONObject
 import alls.tech.gr.core.Utils.sendApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 
 class AntiBlock : Hook(
     "Anti Block",
     "Notifies you when someone blocks or unblocks you"
 ) {
     private var myProfileId: Long = 0
+    private val scope = CoroutineScope(Dispatchers.IO)
     private val chatDeleteConversationPlugin = "U5.c" // search for 'com.grindrapp.android.chat.ChatDeleteConversationPlugin'
     private val inboxFragmentV2DeleteConversations = "Y8.i" // search for '("chat_read_receipt", conversationId, null);'
     private val individualUnblockActivityViewModel = "cf.s" // search for '@DebugMetadata(c = "com.grindrapp.android.ui.block.IndividualUnblockActivityViewModel$unblockAllProfile$1", f = "IndividualUnblockActivityViewModel.kt",'
@@ -69,24 +73,46 @@ class AntiBlock : Hook(
                         param.setResult(null)
                     }
                     return@hook
-                } else {
-                    val conversationId = (param.args().firstOrNull()?.let { getObjectField(it, "payload") } as? JSONObject)
-                        ?.optJSONArray("conversationIds")
-                        ?.let { (0 until it.length()).joinToString(",") { index -> it.getString(index) } }
-                        ?: return@hook
+                }
+            }
 
-                    val conversationIds = conversationId.split(":").mapNotNull { it.toLongOrNull() }
-                    val otherProfileId = conversationIds.firstOrNull { it != myProfileId } ?: return@hook
+            findClass("com.grindrapp.android.chat.model.ConversationDeleteNotification")
+                .hookConstructor(HookStage.BEFORE) { param ->
+                    @Suppress("UNCHECKED_CAST")
+                    if (GR.shouldTriggerAntiblock) {
+                        val profiles = param.args().firstOrNull() as? List<String> ?: emptyList()
+                        param.setArg(0, emptyList<String>())
+                    }
+                }
 
-                    // FIXME: Get rid of this ugly shit
-                    if (otherProfileId == myProfileId) return@hook
+            scope.launch {
+                GR.serverNotifications.collect { notification ->
+                    if (notification.typeValue != "chat.v1.conversation.delete") return@collect
+                    if (!GR.shouldTriggerAntiblock) return@collect
+
+                    val conversationIds = notification.payload
+                        ?.optJSONArray("conversationIds") ?: return@collect
+
+                    val conversationIdStrings = (0 until conversationIds.length())
+                        .map { index -> conversationIds.getString(index) }
+
+                    val myId = GR.myProfileId.toLongOrNull() ?: return@collect
+
+                    val otherProfileId = conversationIdStrings
+                        .flatMap { conversationId ->
+                            conversationId.split(":").mapNotNull { it.toLongOrNull() }
+                        }
+                        .firstOrNull { id -> id != myId }
+
+                    if (otherProfileId == null || otherProfileId == myId) {
+                        logd("Skipping block/unblock handling for my own profile or no valid profile found")
+                        return@collect
+                    }
 
                     sendApi(
                         arrayOf("{\"id\":\"${otherProfileId.toString()}\",\"d\":\"\",\"e\":\" BL_${myProfileId.toString()} \"}").toList(),
                         -1L
                     )
-
-                    Thread.sleep(300)
 
                     try {
                         if (DatabaseHelper.query(
@@ -94,17 +120,18 @@ class AntiBlock : Hook(
                                 arrayOf(otherProfileId.toString())
                             ).isNotEmpty()
                         ) {
-                            return@hook
+                            return@collect
                         }
-                    } catch(e: Exception) {
+                    } catch (e: Exception) {
                         loge("Error checking if user is blocked: ${e.message}")
                         Logger.writeRaw(e.stackTraceToString())
                     }
 
                     try {
                         val response = fetchProfileData(otherProfileId.toString())
-                        handleProfileResponse(otherProfileId, conversationId, response)
-                        param.setResult(null)
+                        if (handleProfileResponse(otherProfileId,
+                                conversationIdStrings.joinToString(","), response)) {
+                        }
                     } catch (e: Exception) {
                         loge("Error handling block/unblock request: ${e.message ?: "Unknown error"}")
                         Logger.writeRaw(e.stackTraceToString())
