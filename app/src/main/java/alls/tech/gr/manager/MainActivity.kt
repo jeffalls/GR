@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Home
@@ -71,13 +72,16 @@ import alls.tech.gr.bridge.NotificationActionReceiver
 import alls.tech.gr.core.Config
 import alls.tech.gr.core.Constants.GRINDR_PACKAGE_NAME
 import alls.tech.gr.core.Logger
+import alls.tech.gr.manager.MainNavItem.*
 import alls.tech.gr.manager.ui.BlockLogScreen
 import alls.tech.gr.manager.ui.CalculatorScreen
 import alls.tech.gr.manager.ui.HomeScreen
 import alls.tech.gr.manager.ui.InstallPage
 import alls.tech.gr.manager.ui.SettingsScreen
+import alls.tech.gr.manager.ui.NotificationScreen
 import alls.tech.gr.manager.ui.theme.GrindrPlusTheme
 import alls.tech.gr.manager.utils.FileOperationHandler
+import alls.tech.gr.manager.utils.isLSPosed
 import alls.tech.gr.utils.HookManager
 import alls.tech.gr.utils.TaskManager
 import com.onebusaway.plausible.android.AndroidResourcePlausibleConfig
@@ -92,8 +96,9 @@ import timber.log.Timber.DebugTree
 
 
 internal val activityScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-internal const val TAG = "∞"
-internal const val DATA_URL = "https://alls.tech/a%E2%88%9E"//"https://raw.githubusercontent.com/R0rt1z2/GrindrPlus/refs/heads/master/manifest.json"
+internal const val TAG = "GrindrPlus"
+internal const val DATA_URL =
+    "https://raw.githubusercontent.com/R0rt1z2/GrindrPlus/refs/heads/master/manifest.json"
 
 sealed class MainNavItem(
     val icon: ImageVector? = null,
@@ -110,11 +115,15 @@ sealed class MainNavItem(
 
     data object BlockLog : MainNavItem(Icons.Filled.History, "Block Log", { BlockLogScreen(this) })
 
+    data object Notifications : MainNavItem(Icons.Filled.Newspaper, "News", { NotificationScreen(this) })
+
     // data object Albums : MainNavItem(Icons.Rounded.PhotoAlbum, "Albums", { ComingSoon() })
     // data object Experiments : MainNavItem(Icons.Rounded.Science, "Experiments", { ComingSoon() })
 
     companion object {
-        val VALUES by lazy { listOf(InstallPage, Home, BlockLog, Settings) }
+        val VALUES by lazy {
+            listOf(InstallPage, BlockLog, Home, Notifications, Settings)
+        }
     }
 }
 
@@ -248,7 +257,7 @@ class MainActivity : ComponentActivity() {
 
                     if (Config.get("analytics", true) as Boolean) {
                         val config = AndroidResourcePlausibleConfig(this@MainActivity).also {
-                            it.domain = "GR.lol"
+                            it.domain = "GRlol"
                             it.host = "https://plausible.gmmz.dev/api/"
                             it.enable = true
                         }
@@ -260,7 +269,7 @@ class MainActivity : ComponentActivity() {
 
                         plausible?.enable(true)
                         plausible?.pageView(
-                            "app://GR/home",
+                            "app://grindrplus/home",
                             props = mapOf("android_version" to Build.VERSION.SDK_INT)
                         )
                     }
@@ -268,7 +277,7 @@ class MainActivity : ComponentActivity() {
                     if (Config.get("first_launch", true) as Boolean) {
                         firstLaunchDialog = true
                         patchInfoDialog = true
-                        plausible?.pageView("app://GR/first_launch")
+                        plausible?.pageView("app://grindrplus/first_launch")
                         Config.put("first_launch", false)
 
                     }
@@ -308,7 +317,7 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 Text(
-                                    text = "GR needs notification permission to alert you when someone blocks or unblocks you.",
+                                    text = "GrindrPlus needs notification permission to alert you when someone blocks or unblocks you.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 )
@@ -540,7 +549,7 @@ class MainActivity : ComponentActivity() {
                         content = { innerPadding ->
                             NavHost(
                                 navController,
-                                startDestination = MainNavItem.Home.toString()
+                                startDestination = Home.toString()
                             ) {
                                 for (item in MainNavItem.VALUES) {
                                     composable(item.toString()) {
@@ -557,7 +566,7 @@ class MainActivity : ComponentActivity() {
                                 var selectedItem by remember { mutableIntStateOf(0) }
                                 var currentRoute =
                                     navController.currentBackStackEntryAsState().value?.destination?.route
-                                        ?: MainNavItem.Home.toString()
+                                        ?: Home.toString()
 
                                     MainNavItem.VALUES.forEachIndexed { index, navigationItem ->
                                         if (navigationItem.toString() == currentRoute) {

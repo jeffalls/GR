@@ -23,8 +23,8 @@ class ExpiringMedia : Hook(
     "Allow unlimited photo/video viewing and save media permanently"
 ) {
     private val classMap = mapOf(
-        "expiringVideoBody" to "com.grindrapp.android.chat.model.ExpiringVideoBody",
-        "expiringImageBody" to "com.grindrapp.android.chat.model.ExpiringImageBody",
+        "expiringVideoBody" to "com.grindrapp.android.chat.data.model.messagebody.ExpiringVideoBody",
+        "expiringImageBody" to "com.grindrapp.android.chat.data.model.messagebody.ExpiringImageBody",
         "expiringImageBodyUiData" to "com.grindrapp.android.chat.presentation.model.BodyUiData\$ExpiringImageBodyUiData",
         "expiringStatusResponse" to "com.grindrapp.android.chat.api.model.ExpiringPhotoStatusResponse"
     )

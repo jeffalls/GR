@@ -184,16 +184,16 @@ object FileOperationHandler {
             deviceInfoFile.writeText(mainJson.toString(4))
             val logFiles = mutableListOf<File>()
 
-            val mainLogFile = File(context.getExternalFilesDir(null), "GR.log")
+            val mainLogFile = File(context.getExternalFilesDir(null), "GRlog")
             if (mainLogFile.exists()) {
-                val logCopy = File(tempDir, "GR.log")
+                val logCopy = File(tempDir, "GRlog")
                 mainLogFile.copyTo(logCopy, overwrite = true)
                 logFiles.add(logCopy)
             }
 
             val backupLogFile = File("${mainLogFile.absolutePath}.bak")
             if (backupLogFile.exists()) {
-                val backupCopy = File(tempDir, "GR.log.bak")
+                val backupCopy = File(tempDir, "GRlog.bak")
                 backupLogFile.copyTo(backupCopy, overwrite = true)
                 logFiles.add(backupCopy)
             }

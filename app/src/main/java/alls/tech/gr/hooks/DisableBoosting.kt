@@ -11,8 +11,8 @@ class DisableBoosting : Hook(
     "Disable boosting",
     "Get rid of all upsells related to boosting"
 ) {
-    private val drawerProfileUiState = "Af.k\$a" // search for 'DrawerProfileUiState(showBoostMeButton='
-    private val radarUiModel = "tc.a\$a" // search for 'RadarUiModel(boostButton='
+    private val drawerProfileUiState = "yl.e\$a" // search for 'DrawerProfileUiState(showBoostMeButton='
+    private val radarUiModel = "ii.a\$a" // search for 'RadarUiModel(boostButton='
     private val fabUiModel = "com.grindrapp.android.boost2.presentation.model.FabUiModel"
     private val rightNowMicrosFabUiModel =
         "com.grindrapp.android.rightnow.presentation.model.RightNowMicrosFabUiModel"
@@ -36,7 +36,8 @@ class DisableBoosting : Hook(
             setObjectField(param.thisObject(), "c", false) // showRNBoostCard
             setObjectField(param.thisObject(), "i", null) // showDayPassItem
             setObjectField(param.thisObject(), "j", null) // unlimitedWeeklySubscriptionItem
-            setObjectField(param.thisObject(), "s", false) // isRightNowAvailable
+            setObjectField(param.thisObject(), "u", false) // isRightNowAvailable
+            setObjectField(param.thisObject(), "w", false) // showMegaBoost
         }
 
         findClass(radarUiModel).hookConstructor(HookStage.AFTER) { param ->
@@ -61,7 +62,7 @@ class DisableBoosting : Hook(
         //   'com.grindrapp.android.ui.home.HomeActivity.showTapsAndViewedMePopup.<anonymous> (HomeActivity.kt'
         //   'com.grindrapp.android.ui.home.HomeActivity$subscribeForBoostRedeem$1'
         //   'com.grindrapp.android.ui.home.HomeActivity.showTapsAndViewedMePopup.<anonymous>.<anonymous> (HomeActivity.kt'
-        listOf("Kf.r0", "Kf.t0", "Kf.x0", "Kf.s0").forEach {
+        listOf("Il.w0", "Il.y0", "Il.C0", "Il.x0").forEach {
             findClass(it).hook("invoke", HookStage.BEFORE) { param ->
                 param.setResult(null)
             }

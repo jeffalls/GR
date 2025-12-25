@@ -65,7 +65,7 @@ object SettingsUtils {
                         showTestDialog(
                             false,
                             "Success!",
-                            "Your Google Maps API key is working correctly. You can use it with GR.",
+                            "Your Google Maps API key is working correctly. You can use it with GR",
                             rawResponse
                         )
                     }

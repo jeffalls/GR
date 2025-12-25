@@ -17,6 +17,7 @@ class DisableAnalytics : Hook(
         val analyticsRestServiceClass = findClass(analyticsRestService)
 
         // First party analytics
+        /*
         findClass(RETROFIT_NAME)
             .hook("create", HookStage.AFTER) { param ->
                 val service = param.getResult()
@@ -24,12 +25,15 @@ class DisableAnalytics : Hook(
                     param.setResult(createServiceProxy(service, analyticsRestServiceClass))
                 }
             }
+        */
 
+        /*
         // Amplitude Analytics
         findClass("com.amplitude.android.Configuration")
             .hook("getOptOut", HookStage.AFTER) { param ->
                 param.setResult(true)
             }
+        */
 
         // Braze
         findClass("com.braze.Braze\$Companion")

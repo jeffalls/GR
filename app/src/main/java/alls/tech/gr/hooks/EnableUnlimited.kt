@@ -2,14 +2,17 @@ package alls.tech.gr.hooks
 
 import android.annotation.SuppressLint
 import android.view.View
+import android.view.ViewGroup
 import alls.tech.gr.GR
 import alls.tech.gr.core.Logger
 import alls.tech.gr.core.logd
 import alls.tech.gr.core.loge
+import alls.tech.gr.core.logi
 import alls.tech.gr.ui.Utils.copyToClipboard
 import alls.tech.gr.utils.Hook
 import alls.tech.gr.utils.HookStage
 import alls.tech.gr.utils.hook
+import de.robv.android.xposed.XposedHelpers.getObjectField
 
 class EnableUnlimited : Hook(
     "Enable unlimited",
@@ -17,50 +20,50 @@ class EnableUnlimited : Hook(
 ) {
     private val profileViewState = "com.grindrapp.android.ui.profileV2.model.ProfileViewState"
     private val profileModel = "com.grindrapp.android.persistence.model.Profile"
-    private val paywallUtils = "Td.d" // search for 'app_restart_required'
-    private val persistentAdBannerContainer = "Y6.J3" // search for 'GrindrAdContainer grindrAdContainer = (GrindrAdContainer) ViewBindings.findChildViewById(view, R.id.persistent_banner_ad_container);'
+    private val tabLayoutClass = "com.google.android.material.tabs.TabLayout"
+
+    private val paywallUtils = "dk.c" // search for 'app_restart_required'
+    private val persistentAdBannerContainer = "Z4.a" // search for 'GrindrAdContainer grindrAdContainer = (GrindrAdContainer) ViewBindings.findChildViewById(view, R.id.persistent_banner_ad_compose_view);'
     private val subscribeToInterstitialsList = listOf(
-        "f6.y\$a" // search for 'com.grindrapp.android.chat.presentation.ui.ChatActivityV2$subscribeToInterstitialAds$1$1$1'
+        "fa.A\$a" // search for 'com.grindrapp.android.chat.presentation.ui.ChatActivityV2$subscribeToInterstitialAds$1$1$1'
     )
     private val viewsToHide = mapOf(
-        "com.grindrapp.android.ui.tagsearch.ProfileTagCascadeFragment\$c" to listOf("upsell_bottom_bar"), // search for 'bind(Landroid/view/View;)Lcom/grindrapp/android/databinding/ProfileTagCascadeFragmentBinding;'
-        "com.grindrapp.android.ui.browse.CascadeFragment\$b" to listOf("upsell_bottom_bar", "micros_fab", "right_now_progress_compose_view"), // search for '"bind(Landroid/view/View;)Lcom/grindrapp/android/databinding/FragmentBrowseCascadeBinding;"'
-        "com.grindrapp.android.ui.home.HomeActivity\$l" to listOf("persistentAdBannerContainer"), // search for 'ViewBindings.findChildViewById(inflate, R.id.activity_home_content)) != null) {'
+        "com.grindrapp.android.ui.tagsearch.ProfileTagCascadeFragment\$b" to listOf("upsell_bottom_bar"), // search for 'bind(Landroid/view/View;)Lcom/grindrapp/android/databinding/ProfileTagCascadeFragmentBinding;'
+        "com.grindrapp.android.ui.browse.CascadeFragment\$b" to listOf("upsell_bottom_bar", "shuffle_top_bar", "floating_rating_banner", "micros_fab", "right_now_progress_compose_view"), // search for '"bind(Landroid/view/View;)Lcom/grindrapp/android/databinding/FragmentBrowseCascadeBinding;"'
+        "com.grindrapp.android.ui.home.HomeActivity\$g" to listOf("persistentAdBannerContainer"), // search for 'ViewBindings.findChildViewById(inflate, R.id.activity_home_content);'
         "com.grindrapp.android.ui.drawer.DrawerProfileFragment\$e" to listOf("plans_title", "store_in_profile_drawer_card", "sideDrawerBoostContainer", "drawer_profile_offer_card"), // search for '"bind(Landroid/view/View;)Lcom/grindrapp/android/databinding/DrawerProfileBinding;"'
-        "com.grindrapp.android.radar.presentation.ui.RadarFragment\$c" to listOf("micros_fab") // search for 'bind(Landroid/view/View;)Lcom/grindrapp/android/databinding/FragmentRadarBinding;'
+        "com.grindrapp.android.radar.presentation.ui.RadarFragment\$c" to listOf("micros_fab", "right_now_fabs_container") // search for 'bind(Landroid/view/View;)Lcom/grindrapp/android/databinding/FragmentRadarBinding;'
     )
 
     override fun init() {
         val userSessionClass = findClass(GR.userSession)
 
-        userSessionClass.hook( // isNoXtraUpsell()
-            "n", HookStage.BEFORE // search for '()) ? false : true;' in userSession
+        userSessionClass.hook( // rolesUpdated()
+            "W", HookStage.BEFORE // search for 'Intrinsics.checkNotNullParameter(roles, "roles");' in userSession
         ) { param ->
-            param.setResult(true)
+            val roles = param.arg(0) as List<String>
+            val allRoles = listOf(
+                "Plus",
+                "Xtra",
+                "Unlimited",
+                "Premium",
+                "Free_Plus",
+//				"Free_Xtra",
+                "Free_Unlimited",
+                "Free_Premium"
+            )
+
+            logi("received roles: $roles, replacing with $allRoles")
+
+            param.setArg(0, allRoles)
         }
 
-        userSessionClass.hook( // isNoPlusUpsell()
-            "I", HookStage.BEFORE // search for 'Role.PLUS, Role.FREE_PLUS' in userSession
+        // prevent leak of faked roles into http headers
+        // search for one line method returning an string in userSession
+        userSessionClass.hook( // get roles list as string
+            "F", HookStage.BEFORE
         ) { param ->
-            param.setResult(true)
-        }
-
-        userSessionClass.hook( // isFree()
-            "B", HookStage.BEFORE // search for '.isEmpty();' in userSession
-        ) { param ->
-            param.setResult(false)
-        }
-
-        userSessionClass.hook( // isFreeXtra()
-            "x", HookStage.BEFORE // search for 'Role.XTRA, Role.FREE_XTRA' in userSession
-        ) { param ->
-            param.setResult(false)
-        }
-
-        userSessionClass.hook( // isFreeUnlimited()
-            "G", HookStage.BEFORE // search for 'Role.UNLIMITED, Role.FREE_UNLIMITED' in userSession
-        ) { param ->
-            param.setResult(true)
+            param.setResult("[]")
         }
 
         subscribeToInterstitialsList.forEach {
@@ -73,6 +76,27 @@ class EnableUnlimited : Hook(
                         param.setResult(null)
                     }
                 }
+        }
+
+        findClass(tabLayoutClass).hook("addTab", HookStage.AFTER) { param ->
+            val blockedTabs = mapOf(
+                4 to "Store"
+            )
+
+            val tab = param.arg<Any>(0)
+            val position = getObjectField(tab, "position") as? Int ?: -1
+
+            logd("Trying to add tab at position $position")
+
+            if (position in blockedTabs.keys) {
+                val tabName = blockedTabs[position] ?: "Unknown"
+
+                val tabView = getObjectField(tab, "view") as? View
+                tabView?.let { view ->
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    logi("Removed tab '$tabName' at position $position")
+                }
+            }
         }
 
         viewsToHide.forEach { (className, viewIds) ->
@@ -89,7 +113,8 @@ class EnableUnlimited : Hook(
         findClass(persistentAdBannerContainer).hook("a", HookStage.BEFORE) { param ->
             if (param.args().isNotEmpty()) {
                 val rootView = param.arg<View>(0)
-                hideViews(rootView, listOf("persistent_banner_ad_container"))
+                // TODO validate change from persistent_banner_ad_container to persistent_banner_ad_compose_view
+                hideViews(rootView, listOf("persistent_banner_ad_compose_view"))
             }
         }
 
@@ -99,7 +124,7 @@ class EnableUnlimited : Hook(
             }
         }
 
-        findClass(paywallUtils).hook("e", HookStage.BEFORE) { param ->
+        findClass(paywallUtils).hook("d", HookStage.BEFORE) { param ->
             val stackTrace = Thread.currentThread().stackTrace.dropWhile {
                 !it.toString().contains("LSPHooker") }.drop(1).joinToString("\n")
 

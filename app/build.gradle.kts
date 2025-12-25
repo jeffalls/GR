@@ -11,7 +11,7 @@ plugins {
 }
 
 android {
-    val versionMajor = 10
+    val versionMajor = 11
     val versionMinor = 0
     namespace = "alls.tech.gr"
     compileSdk = 35

@@ -79,14 +79,14 @@ class HookManager {
 
         runBlocking(Dispatchers.IO) {
             val hookList = listOf(
-                WebSocketAlive(),
+                //WebSocketAlive(),
                 TimberLogging(),
                 BanManagement(),
                 FeatureGranting(),
                 EnableUnlimited(),
                 AntiDetection(),
-                StatusDialog(),
-                AntiBlock(),
+                //StatusDialog(),
+                //AntiBlock(),
                 NotificationAlerts(),
                 DisableUpdates(),
                 DisableBoosting(),
@@ -96,8 +96,8 @@ class HookManager {
                 ChatTerminal(),
                 DisableAnalytics(),
                 ExpiringMedia(),
-                Favorites(),
-                LocalSavedPhrases(),
+                //Favorites(),
+                //LocalSavedPhrases(),
                 LocationSpoofer(),
                 ProfileSpoofer(jsonObject),
                 OnlineIndicator(),

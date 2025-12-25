@@ -14,12 +14,12 @@ import alls.tech.gr.utils.hook
 import de.robv.android.xposed.XposedHelpers.callMethod
 
 class WebSocketAlive : Hook(
-    "Background WebSocket Keep Alive",
+    "Keep Alive WebSocket",
     "Prevents WebSocket disconnections when app goes to background. Causes battery drain, use with caution."
 ) {
     private val safeDkLifecycleManager = "com.safedk.android.internal.b"
     private val webSocketClientImpl = "com.grindrapp.android.network.websocket.WebSocketClientImpl"
-    private val webSocketFactory = "Aa.p"
+    private val webSocketFactory = "Ab.p"
 
     override fun init() {
         hookSafeDkBackgroundDetection()
@@ -35,9 +35,14 @@ class WebSocketAlive : Hook(
             }
 
             findClass(safeDkLifecycleManager).hook("a", HookStage.BEFORE) { param ->
-                val isBackground = param.arg<Boolean>(0)
-                if (isBackground) {
-                    logd("Preventing SafeDK from setting background state")
+                if (param.args().isNotEmpty()) {
+                    val isBackground = param.arg<Boolean>(0)
+                    if (isBackground) {
+                        logd("Preventing SafeDK from setting background state")
+                        param.setResult(null)
+                    }
+                } else {
+                    logd("SafeDK method 'a' called with no parameters")
                     param.setResult(null)
                 }
             }
@@ -49,16 +54,20 @@ class WebSocketAlive : Hook(
 
             findClass(safeDkLifecycleManager).hook("onActivityStopped", HookStage.BEFORE) { param ->
                 logd("Intercepting SafeDK onActivityStopped")
-                handleActivityStopped(param as HookAdapter<Any>)
+                if (param.args().isNotEmpty()) {
+                    handleActivityStopped(param as HookAdapter<Any>)
+                }
                 param.setResult(null)
             }
 
             findClass(safeDkLifecycleManager).hook("registerBackgroundForegroundListener", HookStage.AFTER) { param ->
-                val listener = param.arg<Any>(0)
-                try {
-                    callMethod(listener, "h")
-                } catch (e: Exception) {
-                    // that's fine, we just want to ensure the listener is registered
+                if (param.args().isNotEmpty()) {
+                    val listener = param.arg<Any>(0)
+                    try {
+                        callMethod(listener, "h")
+                    } catch (e: Exception) {
+                        // that's fine, we just want to ensure the listener is registered
+                    }
                 }
             }
         } catch (e: Exception) {

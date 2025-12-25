@@ -237,21 +237,30 @@ class ProfileSpoofer(private val jsonObject: JSONObject) : Hook(
             }
 
             fun obtenerFechaMasReciente(description: String, currentDate: LocalDate): LocalDate {
-                val dateRegex = Regex("<(\\d{2})/(\\d{2})>")
+                // Ahora soporta <dd/MM/yy>
+                val dateRegex = Regex("<(\\d{2})/(\\d{2})/(\\d{2})>")
 
                 val fechas = dateRegex.findAll(description).mapNotNull { match ->
-                    val (day, month) = match.destructured
-                    val fecha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        LocalDate.of(currentDate.year, month.toInt(), day.toInt())
-                    } else {
-                        return@mapNotNull null // Evitar versiones antiguas
+                    val (day, month, yearTwoDigits) = match.destructured
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return@mapNotNull null
+
+                    // Convertir el año de 2 dígitos a 4 dígitos (asumiendo 2000+)
+                    val year = 2000 + yearTwoDigits.toInt()
+
+                    val fecha = try {
+                        LocalDate.of(year, month.toInt(), day.toInt())
+                    } catch (e: Exception) {
+                        return@mapNotNull null // evitar error por fecha inválida tipo 31/02
                     }
 
-                    if (fecha.isAfter(currentDate)) fecha.minusYears(1) else fecha
+                    // Ajuste: si la fecha está en el futuro respecto a currentDate, se mantiene
+                    // ya no es necesario restar años porque ya tenemos el año explícito
+                    fecha
                 }.toList()
 
                 return fechas.maxOrNull() ?: LocalDate.MIN
             }
+
 
             val orderedDataList = currentDataList.filter { profileId ->
                 val description = when (currentCategory) {
@@ -271,23 +280,17 @@ class ProfileSpoofer(private val jsonObject: JSONObject) : Hook(
                         ?.optString(profileId.toString(), "") ?: ""
                 }
 
-                // Extraer la fecha en el formato <dd/MM>
-                val dateMatches = Regex("<(\\d{2})/(\\d{2})>").findAll(description)
+                // Extraer la fecha en el formato <dd/MM/yy>
+                val dateMatches = Regex("<(\\d{2})/(\\d{2})/(\\d{2})>").findAll(description)
                 if (dateMatches.any()) {
                     dateMatches.mapNotNull { match ->
-                        val (day, month) = match.destructured
-                        currentDate?.let { current ->
+                        val (day, month, yearTwoDigits) = match.destructured
+                        currentDate?.let {
                             try {
-                                // Crear la fecha asumiendo el año actual
-                                var date = LocalDate.of(current.year, month.toInt(), day.toInt())
-
-                                // Si la fecha es mayor que la actual, restar un año (es del año pasado)
-                                if (date.isAfter(current)) {
-                                    date = date.minusYears(1)
-                                }
-                                date
+                                val year = 2000 + yearTwoDigits.toInt() // convertir 24 → 2024
+                                LocalDate.of(year, month.toInt(), day.toInt())
                             } catch (e: DateTimeException) {
-                                null // Ignorar fechas inválidas (ej: 31/02)
+                                null // Ignorar fechas inválidas
                             }
                         }
                     }.maxOrNull() ?: LocalDate.MIN // Tomar la fecha más reciente

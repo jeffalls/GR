@@ -95,7 +95,7 @@ fun DebugLogsScreen(
     LaunchedEffect(Unit) {
         launch {
             withContext(Dispatchers.IO) {
-                val log = File(context.getExternalFilesDir(null), "GR.log")
+                val log = File(context.getExternalFilesDir(null), "GRlog")
 
                 fun parseLogs(logs: List<String>) =
                     logs.map {
@@ -168,7 +168,7 @@ fun DebugLogsScreen(
                             snackbarHostState.showSnackbar("Generating URL... This may take a while.")
                         }
 
-                        val log = File(context.getExternalFilesDir(null), "GR.log")
+                        val log = File(context.getExternalFilesDir(null), "GRlog")
                         val logContent = log.readText()
 
                         uploadAndShare(logContent, context)

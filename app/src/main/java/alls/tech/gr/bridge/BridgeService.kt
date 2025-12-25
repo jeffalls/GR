@@ -26,11 +26,13 @@ import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import alls.tech.gr.manager.fetchNotifs
+import kotlinx.coroutines.runBlocking
 
 @SuppressLint("MissingPermission")
 class BridgeService : Service() {
-    private val configFile by lazy { File(getExternalFilesDir(null), "GR.json") }
-    private val logFile by lazy { File(getExternalFilesDir(null), "GR.log") }
+    private val configFile by lazy { File(getExternalFilesDir(null), "grindrplus.json") }
+    private val logFile by lazy { File(getExternalFilesDir(null), "grindrplus.log") }
     private val blockEventsFile by lazy { File(getExternalFilesDir(null), "block_events.json") }
     private val blockEventsLock = ReentrantLock()
     private val ioExecutor = Executors.newSingleThreadExecutor()
@@ -69,10 +71,10 @@ class BridgeService : Service() {
 
         try {
             val channelId = "bridge_service_channel"
-            createNotificationChannel(channelId, "GR Background Service", "Keeps GR running in background")
+            createNotificationChannel(channelId, "GrindrPlus Background Service", "Keeps GrindrPlus running in background")
 
             val notification = NotificationCompat.Builder(this, channelId)
-                .setContentTitle("GR")
+                .setContentTitle("GrindrPlus")
                 .setContentText("Background service active")
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setPriority(NotificationCompat.PRIORITY_MIN)
@@ -80,6 +82,17 @@ class BridgeService : Service() {
                 .setOngoing(true)
                 .setShowWhen(false)
                 .build()
+
+            try {
+                periodicTasksExecutor.scheduleWithFixedDelay(
+                    { runBlocking { fetchNotifs(this@BridgeService) } },
+                    0,
+                    15,
+                    java.util.concurrent.TimeUnit.SECONDS
+                )
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Failed to schedule periodic tasks")
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ServiceCompat.startForeground(
@@ -370,6 +383,14 @@ class BridgeService : Service() {
                 coordinatesFile.delete()
             }
         }
+
+        fun isRooted(): Boolean {
+            return alls.tech.gr.manager.utils.isRooted(applicationContext)
+        }
+
+        fun isLSPosed(): Boolean {
+            return alls.tech.gr.manager.utils.isLSPosed()
+        }
     }
 
     private fun createNotificationChannel(
@@ -403,7 +424,7 @@ class BridgeService : Service() {
 
     private fun createActionIntent(actionType: String, actionData: String): Intent {
         val intent = when (actionType) {
-            "COPY" -> Intent("alls.tech.gr.COPY_ACTION").apply {
+            "COPY" -> Intent("com.grindrplus.COPY_ACTION").apply {
                 putExtra("data", actionData)
                 setPackage(applicationContext.packageName)
                 setClassName(
@@ -412,7 +433,7 @@ class BridgeService : Service() {
                 )
             }
 
-            "VIEW_PROFILE" -> Intent("alls.tech.gr.VIEW_PROFILE_ACTION").apply {
+            "VIEW_PROFILE" -> Intent("com.grindrplus.VIEW_PROFILE_ACTION").apply {
                 putExtra("profileId", actionData)
                 setPackage(applicationContext.packageName)
                 setClassName(
@@ -421,7 +442,7 @@ class BridgeService : Service() {
                 )
             }
 
-            "CUSTOM" -> Intent("alls.tech.gr.CUSTOM_ACTION").apply {
+            "CUSTOM" -> Intent("com.grindrplus.CUSTOM_ACTION").apply {
                 putExtra("data", actionData)
                 setPackage(applicationContext.packageName)
                 setClassName(
@@ -430,7 +451,7 @@ class BridgeService : Service() {
                 )
             }
 
-            else -> Intent("alls.tech.gr.DEFAULT_ACTION").apply {
+            else -> Intent("com.grindrplus.DEFAULT_ACTION").apply {
                 putExtra("data", actionData)
                 setPackage(applicationContext.packageName)
                 setClassName(

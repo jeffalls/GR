@@ -15,11 +15,9 @@ class FeatureGranting : Hook(
     "Feature granting",
     "Grant all Grindr features"
 ) {
-    private val isFeatureFlagEnabled = "yb.d" // search for 'implements IsFeatureFlagEnabled {'
+    private val isFeatureFlagEnabled = "ih.e" // search for 'implements IsFeatureFlagEnabled {'
     private val upsellsV8Model = "com.grindrapp.android.model.UpsellsV8"
     private val insertsModel = "com.grindrapp.android.model.Inserts"
-    private val favoritesExperiment = "com.grindrapp.android.favoritesv2.domain.experiment.FavoritesV2Experiment" // search for 'public final class FavoritesV2Experiment'
-    private val albumSpankBankExperiment = "y4.b" // search for 'spankBankExperiment'
     private val settingDistanceVisibilityViewModel =
         "com.grindrapp.android.ui.settings.distance.a\$e" // search for 'UiState(distanceVisibility='
     private val featureModel = "com.grindrapp.android.usersession.model.Feature"
@@ -37,12 +35,14 @@ class FeatureGranting : Hook(
             }
         }
 
+        /*
         findClass(albumSpankBankExperiment).hook("f", HookStage.BEFORE) { param ->
             // This controls the newly added Albums 'Spank Bank' experiment, which
             // adds blur to the last album(s) of your collection. Returning false
             // disables this feature.
             param.setResult(Config.get("enable_albums_spank_bank", false) as Boolean)
         }
+        */
 
         findClass(featureModel).hook("isGranted", HookStage.BEFORE) { param ->
             val disallowedFeatures = setOf("DisableScreenshot")
@@ -67,12 +67,14 @@ class FeatureGranting : Hook(
                 }
         }
 
+        /*
         findClass(favoritesExperiment)
             .hook("e", HookStage.BEFORE) { param ->
                 if (Config.get("separated_favorites_section", true) as Boolean) {
                     param.setResult(false)
                 }
             }
+        */
 
         listOf(tapModel, tapInboxModel).forEach { model ->
             findClass(model).hook("isViewable", HookStage.BEFORE) { param ->
@@ -85,6 +87,7 @@ class FeatureGranting : Hook(
         featureManager.add(Feature("PasswordComplexity", false))
         featureManager.add(Feature("TimedBans", false))
         featureManager.add(Feature("GenderFlag", true))
+        featureManager.add(Feature("ForceApplovinOptOut", true))
         featureManager.add(Feature("RewardedAdViewedMeFeatureFlag", false))
         featureManager.add(Feature("ChatInterstitialFeatureFlag", false))
         featureManager.add(Feature("SideDrawerDeeplinkKillSwitch", true))
@@ -94,6 +97,7 @@ class FeatureGranting : Hook(
         featureManager.add(Feature("DoxyPEP", true))
         featureManager.add(Feature("CascadeRewriteFeatureFlag", false))
         featureManager.add(Feature("AdsLogs", false))
+        featureManager.add(Feature("NonChatEnvironmentAdBannerFeatureFlag", false))
         featureManager.add(Feature("PersistentAdBannerFeatureFlag", false))
         featureManager.add(Feature("ClientTelemetryTracking", false))
         featureManager.add(Feature("LTOAds", false))
@@ -108,6 +112,7 @@ class FeatureGranting : Hook(
         featureManager.add(Feature("CookieTap", Config.get("enable_cookie_tap", false, true) as Boolean))
         featureManager.add(Feature("VipFlag", Config.get("enable_vip_flag", false, true) as Boolean))
         featureManager.add(Feature("PositionFilter", true))
+        featureManager.add(Feature("AgeFilter", true))
         featureManager.add(Feature("BanterFeatureGate", false))
         featureManager.add(Feature("TakenOnGrindrWatermarkFlag", false))
         featureManager.add(Feature("gender-filter", true))
