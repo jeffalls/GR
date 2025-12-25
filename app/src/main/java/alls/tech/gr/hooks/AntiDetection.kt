@@ -29,6 +29,10 @@ class AntiDetection : Hook(
                 param.setResult(false)
             }
          */
+        findClass(singleStartActivity)
+            .hook("N", HookStage.AFTER) { param ->
+                param.setResult(false)
+            }
 
         findClass(appLovinSdkClass)
             .hook("isEmulator", HookStage.AFTER) { param ->

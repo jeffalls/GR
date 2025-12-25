@@ -130,3 +130,4 @@ class Favorites : Hook(
             }
     }
 }
+

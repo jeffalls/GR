@@ -28,21 +28,13 @@ class FeatureGranting : Hook(
     override fun init() {
         initFeatures()
 
+        // search for 'Assignment.Flag'
         findClass(isFeatureFlagEnabled).hook("a", HookStage.BEFORE) { param ->
             val flagKey = callMethod(param.args()[0], "toString") as String
             if (featureManager.isManaged(flagKey)) {
                 param.setResult(featureManager.isEnabled(flagKey))
             }
         }
-
-        /*
-        findClass(albumSpankBankExperiment).hook("f", HookStage.BEFORE) { param ->
-            // This controls the newly added Albums 'Spank Bank' experiment, which
-            // adds blur to the last album(s) of your collection. Returning false
-            // disables this feature.
-            param.setResult(Config.get("enable_albums_spank_bank", false) as Boolean)
-        }
-        */
 
         findClass(featureModel).hook("isGranted", HookStage.BEFORE) { param ->
             val disallowedFeatures = setOf("DisableScreenshot")
@@ -66,15 +58,6 @@ class FeatureGranting : Hook(
                     param.setResult(0)
                 }
         }
-
-        /*
-        findClass(favoritesExperiment)
-            .hook("e", HookStage.BEFORE) { param ->
-                if (Config.get("separated_favorites_section", true) as Boolean) {
-                    param.setResult(false)
-                }
-            }
-        */
 
         listOf(tapModel, tapInboxModel).forEach { model ->
             findClass(model).hook("isViewable", HookStage.BEFORE) { param ->

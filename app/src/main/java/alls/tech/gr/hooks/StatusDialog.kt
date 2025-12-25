@@ -20,7 +20,7 @@ import java.io.File
 
 class StatusDialog : Hook(
     "Status Dialog",
-    "Check whether GR is alive or not"
+    "Check whether GrindrPlus is alive or not"
 ) {
     private val tabView = "com.google.android.material.tabs.TabLayout\$TabView"
 
@@ -34,7 +34,7 @@ class StatusDialog : Hook(
 
                 if (position == 0) {
                     tabView.setOnLongClickListener { v ->
-                        showGRDialog(v.context)
+                        showGrindrPlusDialog(v.context)
                         false
                     }
                 }
@@ -42,7 +42,7 @@ class StatusDialog : Hook(
         }
     }
 
-    private fun showGRDialog(context: Context) {
+    private fun showGrindrPlusDialog(context: Context) {
         GR.currentActivity?.runOnUiThread {
             try {
                 val packageManager = context.packageManager
@@ -74,8 +74,13 @@ class StatusDialog : Hook(
                 val androidDeviceIdStatus = (Config.get("android_device_id", "") as String)
                     .let { id -> if (id.isNotEmpty()) "Spoofing ($id)" else "Not Spoofing (stock)" }
 
+                if (GR.bridgeClient.isConnected()) {
+                    val isLSPosed = GR.bridgeClient.isLSPosed()
+                    val isRooted = GR.bridgeClient.isRooted()
+                }
+
                 val message = buildString {
-                    appendLine("GR is active and running")
+                    appendLine("GrindrPlus is active and running")
                     appendLine()
                     appendLine("App Information:")
                     appendLine("• Version: $appVersionName ($appVersionCode)")
@@ -83,8 +88,12 @@ class StatusDialog : Hook(
                     appendLine("• Android ID: $androidDeviceIdStatus")
                     appendLine()
                     appendLine("Module Information:")
-                    appendLine("• GR: $moduleVersion")
+                    appendLine("• GrindrPlus: $moduleVersion")
                     appendLine("• Bridge Status: $bridgeStatus")
+                    if (GR.bridgeClient.isConnected()) {
+                        appendLine("• LSPosed: ${GR.bridgeClient.isLSPosed()}")
+                        appendLine("• Rooted: ${GR.bridgeClient.isRooted()}")
+                    }
                     appendLine()
                     appendLine("Device Information:")
                     appendLine("• Device: $deviceModel")
@@ -94,7 +103,7 @@ class StatusDialog : Hook(
                 }
 
                 AlertDialog.Builder(context)
-                    .setTitle("GR")
+                    .setTitle("GrindrPlus")
                     .setMessage(message)
                     .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
                     .setNegativeButton("Restart") { dialog, _ ->
@@ -106,8 +115,8 @@ class StatusDialog : Hook(
 
             } catch (e: Exception) {
                 AlertDialog.Builder(context)
-                    .setTitle("GR")
-                    .setMessage("GR is active and running\n\nError retrieving details: ${e.message}")
+                    .setTitle("GrindrPlus")
+                    .setMessage("GrindrPlus is active and running\n\nError retrieving details: ${e.message}")
                     .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
                     .show()
             }

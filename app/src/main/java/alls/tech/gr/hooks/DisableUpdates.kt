@@ -18,7 +18,8 @@ class DisableUpdates : Hook(
     "Disable updates",
     "Disable forced updates"
 ) {
-    private val versionInfoEndpoint = "https://alls.tech/v%E2%88%9E" //"https://raw.githubusercontent.com/R0rt1z2/GrindrPlus/master/version.json"
+    private val versionInfoEndpoint =
+        "https://raw.githubusercontent.com/R0rt1z2/GrindrPlus/master/version.json"
     private val appUpdateInfo = "com.google.android.play.core.appupdate.AppUpdateInfo"
     private val appUpdateZzm = "com.google.android.play.core.appupdate.zzm" // search for 'requestUpdateInfo(%s)'
     private val appUpgradeManager = "jf.n" // search for 'Uri.parse("market://details?id=com.grindrapp.android");'
@@ -38,6 +39,7 @@ class DisableUpdates : Hook(
             }
 
         findClass(appUpgradeManager) // showDeprecatedVersionDialog()
+            // search for '.setMessage(R.string.deprecation_message);'
             .hook("b", HookStage.BEFORE) { param ->
                 param.setResult(null)
             }

@@ -42,4 +42,3 @@ interface TeleportLocationDao {
     @Query("DELETE FROM TeleportLocationEntity WHERE name = :name")
     suspend fun deleteLocation(name: String): Int
 }
-

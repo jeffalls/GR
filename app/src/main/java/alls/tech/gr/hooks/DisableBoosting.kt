@@ -20,6 +20,9 @@ class DisableBoosting : Hook(
     private val boostStateClass =
         "com.grindrapp.android.ui.drawer.model.MicrosDrawerItemState\$Unavailable"
 
+    private val navbarClass = "com.grindrapp.android.home.presentation.model.HomeScreenBottomNavigationUiModel"
+    private val smallPersistentVector = "kotlinx.collections.immutable.implementations.immutableList.SmallPersistentVector"
+
     override fun init() {
         findClass(drawerProfileUiState).hookConstructor(HookStage.AFTER) { param ->
             setObjectField(param.thisObject(), "a", false) // showBoostMeButton
@@ -55,14 +58,26 @@ class DisableBoosting : Hook(
             setObjectField(param.thisObject(), "isFabVisible", false) // isFabVisible
         }
 
+        val spvConstructor = findClass(smallPersistentVector).constructors[0]
+
+        findClass(navbarClass).hookConstructor(HookStage.BEFORE) { param ->
+            val routeList = param.args()[2] as List<*>
+            spvConstructor
+            val newRouteArray =	routeList.filter { it?.javaClass?.simpleName != "Store" }.toTypedArray()
+            val newRouteList = spvConstructor.newInstance(newRouteArray)
+
+            param.setArg(2, newRouteList)
+        }
+
         // the two anonymous functions that get called to invoke the annoying tooltip
         // respectively: showRadarTooltip.<anonymous> and showTapsAndViewedMePopup
         // search for:
-        //   'com.grindrapp.android.ui.home.HomeActivity$showTapsAndViewedMePopup$1$1'
-        //   'com.grindrapp.android.ui.home.HomeActivity.showTapsAndViewedMePopup.<anonymous> (HomeActivity.kt'
-        //   'com.grindrapp.android.ui.home.HomeActivity$subscribeForBoostRedeem$1'
-        //   'com.grindrapp.android.ui.home.HomeActivity.showTapsAndViewedMePopup.<anonymous>.<anonymous> (HomeActivity.kt'
-        listOf("Il.w0", "Il.y0", "Il.C0", "Il.x0").forEach {
+        //   ???     - 'com.grindrapp.android.ui.home.HomeActivity$showTapsAndViewedMePopup$1$1'
+        //   ???     - 'com.grindrapp.android.ui.home.HomeActivity.showTapsAndViewedMePopup.<anonymous> (HomeActivity.kt'
+        //   ???     - 'com.grindrapp.android.ui.home.HomeActivity.showTapsAndViewedMePopup.<anonymous>.<anonymous> (HomeActivity.kt'
+        //   "Il.w0" - 'com.grindrapp.android.ui.home.HomeActivity$subscribeForBoostRedeem$1'
+        // TODO find the showTapsAndViewedMePopup in 25.20.0
+        listOf("Il.w0").forEach {
             findClass(it).hook("invoke", HookStage.BEFORE) { param ->
                 param.setResult(null)
             }

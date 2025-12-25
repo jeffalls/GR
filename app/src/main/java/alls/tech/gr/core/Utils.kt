@@ -64,13 +64,11 @@ object Utils {
 
         val chatArgsInstance = chatArgsClass.constructors.first().newInstance(
             conversationMetadataInstance,
-            "0xDEADBEEF", // str
+            "notification_chat_message", // str
             profileType,
             refererType,
             "0xDEADBEEF", // str2
-            "0xDEADBEEF", // str3
             null,
-            null, // chatMediaDrawerArgs
             false,
             844
         )
@@ -87,15 +85,7 @@ object Utils {
 
         intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-        val generalDeepLinksClass =
-            GR.loadClass("com.grindrapp.android.deeplink.GeneralDeepLinks")
-        val startActivityMethod = generalDeepLinksClass.getDeclaredMethod(
-            "safedk_Context_startActivity_97cb3195734cf5c9cc3418feeafa6dd6",
-            Context::class.java,
-            Intent::class.java
-        )
-
-        startActivityMethod.invoke(null, context, intent)
+        context.startActivity(intent)
     }
 
     fun openProfile(id: String) {
@@ -104,6 +94,8 @@ object Utils {
         val referrerType = referrerTypeClass.getField("NOTIFICATION").get(null)
         val profilesActivityInnerClass =
             GR.loadClass("com.grindrapp.android.ui.profileV2.ProfilesActivity\$a")
+
+        Logger.i("ProfilesActivity inner class: $profilesActivityInnerClass")
 
         val method = profilesActivityInnerClass.declaredMethods.find {
             it.parameterTypes.size == 4 && it.parameterTypes[2] == referrerTypeClass
@@ -123,15 +115,7 @@ object Utils {
         ) as Intent?
         intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-        val generalDeepLinksClass =
-            GR.loadClass("com.grindrapp.android.deeplink.GeneralDeepLinks")
-        val startActivityMethod = generalDeepLinksClass.getDeclaredMethod(
-            "safedk_Context_startActivity_97cb3195734cf5c9cc3418feeafa6dd6",
-            Context::class.java,
-            Intent::class.java
-        )
-
-        startActivityMethod.invoke(null, context, intent)
+        context.startActivity(intent)
     }
 
     fun calculateBMI(isMetric: Boolean, weight: Double, height: Double): Double {
@@ -291,7 +275,7 @@ object Utils {
             if (favoritesFile.exists() && blocksFile.exists()) {
                 showWarningDialog(
                     context = activity,
-                    message = "Favorites and Blocks import files detected. GR will process the favorites list first. " +
+                    message = "Favorites and Blocks import files detected. GrindrPlus will process the favorites list first. " +
                             "Blocks import will be done on the next app restart.",
                     onConfirm = {
                         val threshold = (Config.get("favorites_import_threshold", "500") as String).toInt()

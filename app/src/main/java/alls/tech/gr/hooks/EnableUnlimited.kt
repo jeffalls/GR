@@ -37,7 +37,6 @@ class EnableUnlimited : Hook(
 
     override fun init() {
         val userSessionClass = findClass(GR.userSession)
-
         userSessionClass.hook( // rolesUpdated()
             "W", HookStage.BEFORE // search for 'Intrinsics.checkNotNullParameter(roles, "roles");' in userSession
         ) { param ->

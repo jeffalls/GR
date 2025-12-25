@@ -17,7 +17,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
         try {
             when (intent.action) {
-                "alls.tech.gr.COPY_ACTION" -> {
+                "com.grindrplus.COPY_ACTION" -> {
                     val data = intent.getStringExtra("data") ?: return
 
                     Handler(Looper.getMainLooper()).post {
@@ -28,7 +28,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     }
                 }
 
-                "alls.tech.gr.VIEW_PROFILE_ACTION" -> {
+                "com.grindrplus.VIEW_PROFILE_ACTION" -> {
                     val profileId = intent.getStringExtra("profileId") ?: return
                     val appIntent = Intent().apply {
                         setClassName(
@@ -42,14 +42,14 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     context.startActivity(appIntent)
                 }
 
-                "alls.tech.gr.CUSTOM_ACTION" -> {
+                "com.grindrplus.CUSTOM_ACTION" -> {
                     val data = intent.getStringExtra("data") ?: return
                     Handler(Looper.getMainLooper()).post {
                         Toast.makeText(context, "Custom action: $data", Toast.LENGTH_SHORT).show()
                     }
                 }
 
-                "alls.tech.gr.DEFAULT_ACTION" -> {
+                "com.grindrplus.DEFAULT_ACTION" -> {
                     val data = intent.getStringExtra("data") ?: return
                     Handler(Looper.getMainLooper()).post {
                         Toast.makeText(context, "Action performed", Toast.LENGTH_SHORT).show()

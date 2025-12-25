@@ -30,7 +30,7 @@ class Database(
                 }
 
                 val tableList = if (tables.isEmpty()) "No tables found."
-                    else tables.joinToString("\n")
+                else tables.joinToString("\n")
 
                 val textView = AppCompatTextView(activity).apply {
                     text = tableList
@@ -176,3 +176,4 @@ class Database(
         }
     }
 }
+

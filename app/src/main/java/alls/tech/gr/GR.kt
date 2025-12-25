@@ -142,6 +142,7 @@ object GR {
         Logger.initialize(context, bridgeClient, true)
         Logger.i("Initializing GrindrPlus...", LogSource.MODULE)
 
+        // checkVersionCodes(versionCodes, versionNames)
         val connected = runBlocking {
             try {
                 withTimeout(10000) {
